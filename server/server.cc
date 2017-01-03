@@ -27,8 +27,9 @@ struct sockaddr_in stAddr, stClientAddr;
 void InicializeGamer(int gamerSocket) {
     char buff[4];
     for (int i = 0; i < MAX_GAMER; i++){
-        if (players[i] != -1){
+        if (players[i] == -1){
             sprintf(buff, "%d\n", i);
+            printf("Index: %d\n", i);
             players[i] = gamerSocket;
             wood[i] = 0;
             food[i] = 0;
@@ -48,10 +49,13 @@ void InicializeGamer(int gamerSocket) {
 
 void *acceptAndInicializeGamer(void *threadID){
     nTmp = sizeof(struct sockaddr);
-    while (numberOfGamers < MAX_GAMER) {
+    while (1) {
         nClientSocket = accept(nSocket, (struct sockaddr*) &stClientAddr, &nTmp);
-        printf("%d/n", nClientSocket);
-        InicializeGamer(nClientSocket);
+        if (numberOfGamers < MAX_GAMER) {
+            printf("%d\n", nClientSocket);
+            InicializeGamer(nClientSocket);
+        } else 
+            write(nClientSocket, "-1\0", 3);
     }
     pthread_exit(NULL);
 }
@@ -104,6 +108,7 @@ int main(int argc, char* argv[]){
 
    pthread_t thread;
    long t = 1;
+   printf("%d\n", nSocket);
    if (pthread_create(&thread, NULL, acceptAndInicializeGamer, (void *)t) < 0)
        printf("ERROR \n");
    while (1);
