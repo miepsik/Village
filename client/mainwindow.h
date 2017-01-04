@@ -16,6 +16,7 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     void connectTcp();
     QTcpSocket * pSocket;
+    QByteArray playerID;
 
     ~MainWindow();
 
@@ -26,6 +27,8 @@ private:
 public slots:
     void readTcpData();
 
+private slots:
+    void on_pushButton_clicked();
 };
 
 #endif // MAINWINDOW_H

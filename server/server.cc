@@ -11,6 +11,8 @@
 #include <arpa/inet.h>
 #include <time.h>
 #include <pthread.h>
+#include <sys/epoll.h>
+#include <poll.h>
 
 #define SERVER_PORT 1234
 #define QUEUE_SIZE 5
@@ -21,6 +23,9 @@ int nBind, nListen;
 int nFoo;
 int numberOfGamers;
 int *wood, *food, *archer, *spear, *players, *woodSpeed, *foodSpeed, *wall, *recrutationSpeed;
+int epollDesc;
+epoll_data_t epd;
+epoll_event event;
 socklen_t nTmp;
 struct sockaddr_in stAddr, stClientAddr;
 
@@ -28,7 +33,7 @@ void InicializeGamer(int gamerSocket) {
     char buff[4];
     for (int i = 0; i < MAX_GAMER; i++){
         if (players[i] == -1){
-            sprintf(buff, "%d\n", i);
+            sprintf(buff, "%d", i);
             printf("Index: %d\n", i);
             players[i] = gamerSocket;
             wood[i] = 0;
@@ -40,6 +45,10 @@ void InicializeGamer(int gamerSocket) {
             wall[i] = 0;
             recrutationSpeed[i] = 5000;
             write(gamerSocket, buff, 4);
+            event.events = EPOLLIN;
+            epd.u32 = (i+1)*1000;
+            event.data = epd;
+            epoll_ctl(epollDesc, EPOLL_CTL_ADD, gamerSocket, &event);
             break;
         }
     }
@@ -64,6 +73,7 @@ void *acceptAndInicializeGamer(void *threadID){
 void inicialize(){
     nFoo = 1;
     numberOfGamers = 0;
+    epollDesc = epoll_create1(0);
     wood = (int*)malloc(MAX_GAMER*sizeof(int));
     food = (int*)malloc(MAX_GAMER*sizeof(int));
     archer = (int*)malloc(MAX_GAMER*sizeof(int));
@@ -75,6 +85,22 @@ void inicialize(){
     foodSpeed = (int*)malloc(MAX_GAMER*sizeof(int));
     wall = (int*)malloc(MAX_GAMER*sizeof(int));
     recrutationSpeed = (int*)malloc(MAX_GAMER*sizeof(int));
+}
+
+void clear() {
+    for (int i = 0; i < MAX_GAMER; i++) {
+        if (players[i] != -1)
+            close(players[i]);
+    }
+    close(nSocket);
+    
+}
+
+void closePlayer(int p) {
+    printf("PLAYER %d CLOSE\n", p);
+    close(players[p]);
+    players[p] = -1;
+    
 }
 
 int main(int argc, char* argv[]){
@@ -111,7 +137,21 @@ int main(int argc, char* argv[]){
    printf("%d\n", nSocket);
    if (pthread_create(&thread, NULL, acceptAndInicializeGamer, (void *)t) < 0)
        printf("ERROR \n");
-   while (1);
+   while (1) {
+       epoll_wait(epollDesc, &event, 1, -1);
+       for (unsigned int pl = 0; pl < MAX_GAMER; pl++) {
+           if (players[pl] != -1 && event.data.u32 == (pl+1) * 1000) {
+                printf("button: %d\n", pl);
+                char buff[255];
+                int l;
+                l = read(players[pl], buff, 255);
+                if (l < 1)
+                    closePlayer(pl);
+                printf("%s\n", buff);
+                event.data.u32 = 0;
+           }
+       }
+   }
    //while(1)
    //{
    //    /* block for connection request */
@@ -136,6 +176,6 @@ int main(int argc, char* argv[]){
   //         close(nClientSocket);
   //     }
 
-   close(nSocket);
+   clear();
    return(0);
 }

@@ -17,6 +17,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    playerID = "-1";
     connectTcp();
 //    exit (EXIT_SUCCESS);
 }
@@ -37,10 +38,18 @@ void MainWindow::connectTcp()
 void MainWindow::readTcpData()
 {
     QByteArray data = pSocket->readAll();
-    ui->messageText->append(data);
+    if (playerID == "-1") {
+        playerID = data;
+    }
+    ui->messageText->append(playerID + "\n");
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::on_pushButton_clicked()
+{
+    pSocket->write(" wood");
 }
