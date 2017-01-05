@@ -17,9 +17,12 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    QPixmap wood("/media/miebs/Dane1/Uczelnia/semestr5/sk/village/Village/client/pics/Wood_Icon.png");
+    QPixmap food("/media/miebs/Dane1/Uczelnia/semestr5/sk/village/Village/client/pics/food.png");
+    ui->woodIcon->setPixmap(wood);
+    ui->foodIcon->setPixmap(food);
     playerID = "-1";
     connectTcp();
-//    exit (EXIT_SUCCESS);
 }
 
 void MainWindow::connectTcp()
@@ -40,8 +43,10 @@ void MainWindow::readTcpData()
     QByteArray data = pSocket->readAll();
     if (playerID == "-1") {
         playerID = data;
+        ui->woodCost->append(playerID + "\n");
+    } else {
+        ui->woodAmmount->setText(data);
     }
-    ui->messageText->append(playerID + "\n");
 }
 
 MainWindow::~MainWindow()

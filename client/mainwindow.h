@@ -17,17 +17,13 @@ public:
     void connectTcp();
     QTcpSocket * pSocket;
     QByteArray playerID;
+    Ui::MainWindow *ui;
 
     ~MainWindow();
-
-private:
-    Ui::MainWindow *ui;
 
 
 public slots:
     void readTcpData();
-
-private slots:
     void on_pushButton_clicked();
 };
 

@@ -55,6 +55,23 @@ void InicializeGamer(int gamerSocket) {
     numberOfGamers++;
 }
 
+void *addResources(void *threadID) {
+    while (1) {
+        for (int i = 0; i < MAX_GAMER; i++) {
+            if (players[i] >= 0) {
+                wood[i] += woodSpeed[i];
+                food[i] += foodSpeed[i];
+                char buff[255];
+                int n = sprintf(buff, "r%d %d", wood[i], food[i]);
+                write(players[i], buff, n+1);
+                printf("Surowce gracz %d\n", i);
+            }
+        }
+        sleep(1);
+    }
+    pthread_exit(NULL);
+}
+
 
 void *acceptAndInicializeGamer(void *threadID){
     nTmp = sizeof(struct sockaddr);
@@ -99,7 +116,7 @@ void clear() {
 void closePlayer(int p) {
     printf("PLAYER %d CLOSE\n", p);
     close(players[p]);
-    players[p] = -1;
+    players[p] = -2;
     
 }
 
@@ -132,10 +149,13 @@ int main(int argc, char* argv[]){
        fprintf(stderr, "%s: Can't set queue size.\n", argv[0]);
    }
 
-   pthread_t thread;
+   pthread_t thread[2];
    long t = 1;
    printf("%d\n", nSocket);
-   if (pthread_create(&thread, NULL, acceptAndInicializeGamer, (void *)t) < 0)
+   if (pthread_create(&thread[0], NULL, acceptAndInicializeGamer, (void *)t) < 0)
+       printf("ERROR \n");
+   t++;
+   if (pthread_create(&thread[1], NULL, addResources, (void *)t) < 0)
        printf("ERROR \n");
    while (1) {
        epoll_wait(epollDesc, &event, 1, -1);
@@ -147,35 +167,25 @@ int main(int argc, char* argv[]){
                 l = read(players[pl], buff, 255);
                 if (l < 1)
                     closePlayer(pl);
-                printf("%s\n", buff);
-                event.data.u32 = 0;
+                else {
+                    printf("%s\n", buff);
+                    event.data.u32 = 0;
+                    switch (buff[0]) {
+                        case 'u': // upgrade
+                            if (buff[1] == 'w') {
+                                woodSpeed[pl] *= 1.1;
+                                
+                            }
+                            else
+                                foodSpeed[pl] *= 1.1;
+                            break;
+                        case 'r':
+                            break;
+                    }
+                }
            }
        }
    }
-   //while(1)
-   //{
-   //    /* block for connection request */
-   //    nTmp = sizeof(struct sockaddr);
-   //    nClientSocket = accept(nSocket, (struct sockaddr*)&stClientAddr, &nTmp);
-   //    if (nClientSocket < 0)
-   //    {
-   //        fprintf(stderr, "%s: Can't create a connection's socket.\n", argv[0]);
-   //        exit(1);
-   //    }
-//
-  //         printf("%s: [connection from %s]\n",
-   //               argv[0], inet_ntoa((struct in_addr)stClientAddr.sin_addr));
-  //         time_t now;
-  //         struct tm *local;
-  //         time (&now);
-  //         local = localtime(&now);
-  //         char buffer[50];
-  //         int n;
-   //        n = sprintf(buffer, "%s\n", asctime(local));
-  //         write(nClientSocket, buffer, n);
-  //         close(nClientSocket);
-  //     }
-
    clear();
    return(0);
 }
