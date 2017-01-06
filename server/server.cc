@@ -17,6 +17,11 @@
 #define SERVER_PORT 1234
 #define QUEUE_SIZE 5
 #define MAX_GAMER 2
+#define ARCHER_ATTACK 5
+#define ARCHER_DEFF 20
+#define SPEAR_ATTACK 20
+#define SPEAR_DEFF 5
+#define CAP 15
 
 int nSocket, nClientSocket;
 int nBind, nListen;
@@ -55,6 +60,20 @@ void InicializeGamer(int gamerSocket) {
     numberOfGamers++;
 }
 
+char* listToAttack() {
+    static char result[255];
+    char buff[5];
+    result[0] = '\0';
+    for (int i = 0; i <MAX_GAMER; i++) {
+        if (players[i] != -1) {
+            sprintf(buff, "%d ", i);
+            strcat(result, buff);
+        }
+    }
+    return result;
+}
+
+
 void *addResources(void *threadID) {
     while (1) {
         for (int i = 0; i < MAX_GAMER; i++) {
@@ -68,6 +87,31 @@ void *addResources(void *threadID) {
             }
         }
         sleep(1);
+    }
+    pthread_exit(NULL);
+}
+
+void *sendAttack(void *args) {
+    char *str = (char *) args;
+    int attacker, target, archers, spears;
+    sscanf(str, "%d %d %d %d", &attacker, &target, &archers, &spears);
+    archer[attacker] -= archers;
+    spear[attacker] -= spears;
+    sleep(5);
+    int attack, deff;
+    attack = archers * ARCHER_ATTACK + spears * SPEAR_ATTACK;
+    deff = archer[target] * ARCHER_DEFF + spear[target] * ARCHER_DEFF;
+    if (attack > deff) {
+        archer[target] = 0;
+        spear[target] = 0;
+        archers -= archers * deff/attack;
+        spears -= spears * deff/attack;
+        sleep(5);
+        archer[attacker] += archers;
+        spear[attacker] += spears;
+    } else {
+        archer[target] -= archer[target] * deff/attack;
+        spear[target] -= spear[target] * deff/attack;
     }
     pthread_exit(NULL);
 }
@@ -168,19 +212,36 @@ int main(int argc, char* argv[]){
                 if (l < 1)
                     closePlayer(pl);
                 else {
+                    char message[255];
+                    int l;
                     printf("%s\n", buff);
                     event.data.u32 = 0;
                     switch (buff[0]) {
                         case 'u': // upgrade
                             if (buff[1] == 'w') {
                                 woodSpeed[pl] *= 1.1;
-                                
+                                l = sprintf(message, "s w %d", woodSpeed[pl]);
+                                write(players[pl], message, l+1);
                             }
-                            else
+                            else {
                                 foodSpeed[pl] *= 1.1;
+                                l = sprintf(message, "s f %d", foodSpeed[pl]);
+                                write(players[pl], message, l+1);
+                            }
                             break;
-                        case 'r':
+                        case 'a': // want list of villages to attack
+                            l = sprintf(message, "l %s", listToAttack());
+                            write(players[pl], message, l+1);
                             break;
+                        case 's' : // send attack
+                            int l = strlen(buff);
+                            char s[l];
+                            strncpy(s, buff+1, l-1);
+                            s[l-1] = '\0';
+                            pthread_t a;
+                            pthread_create(&a, NULL, sendAttack, (void *)s);
+                            break;
+
                     }
                 }
            }
