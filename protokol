@@ -1,0 +1,42 @@
+Wszystkie komunikaty kończą się znakiem e jak end
+
+klient chce się dołączyć do rozgrywki - wysyła "HELLOe"
+serwer odpowiada przydzielonym indeksem gracza, -1 oznacza, że brak miejsc
+
+podniesienie tartaku o poziom wyżej - klient wysyła "uwe"
+serwer odpowiada - "uw200e" gdzie 200 to nowa liczba produkowanych jednostek na s
+podniesienie budynku od jedzenia - klient wysyła "ufe"
+serwer odpowiada - "uf200e" 
+podniesienie muru o poziom wyżej - klient wysyła "ude"
+serwer odpowiada - "ud13e" gdzie 13 to nowy poziom muru
+
+gracz rekrutuje łuczników - klient wysyła "ra10e" jeśli chce 10
+serwer odpowiada "ra50e" jeśli gracz ma teraz 50 łuczników
+gracz rekrutuje włuczników - klient wysyła "rs10e" jeśli chce 10
+
+gracz chce zaatakować i prosi o listę możliwych celów - "ae"
+serwer odpowiada "a1 2 3 10 22 30e", są to indeksy wiosek do zaatakowania
+
+gracz wysyła atak - "s 5 8 20 30e" gdzie:
+5-indeks gracza wysyłającego atak
+8-indeks atakowanego gracza
+20-liczba wysłanych łuczników
+30-liczba wysłanych włuczników
+serwer odpowiada "s10 15" gdzie
+10 - liczba pozostałych łuczników
+15 - liczba pozostałych włuczników
+-1 oznaczałoby błąd
+
+jeśli atak się udał to do gracza wracają wosjka "h10 20 3 850 730e" gdzie
+10 - liczba łuczników w wiosce (ci co byli + ci którzy wrócili)
+20 - włucznicy na tej samej zasadzie
+3 - liczba punktów gracza (za każdy skuteczny atak gracz dostaje punkt, przy 30 gracz wygrywa i koniec rozgrywki)
+850 - nowa liczba drewna (to co było + to ile zrabowało wojsko)
+730 - jedzenie na tej samej zasadzie
+
+jeśli wszyscy zginęli to nie ma żadnej wiadomości
+serwer co sekundę dodaje surowce zgodnie z poziomem budynków z komunikatem "x200 500e" gdzie
+200 - liczba jednostek drewna
+500 - liczba jednostek jedzenia
+
+na zakończenie rozgrywki idzie komunikat "WINNER12e" gdzie 12 to indeks zwycięscy

@@ -21,14 +21,17 @@
 #define ARCHER_DEFF 20
 #define SPEAR_ATTACK 20
 #define SPEAR_DEFF 5
+#define WALL_DEFF 10
 #define CAP 15
+#define INITIAL_MESSAGE "HELLOe"
 
 int nSocket, nClientSocket;
 int nBind, nListen;
 int nFoo;
 int numberOfGamers;
-int *wood, *food, *archer, *spear, *players, *woodSpeed, *foodSpeed, *wall, *recrutationSpeed;
+int *wood, *food, *archer, *spear, *players, *woodSpeed, *foodSpeed, *wall, *recrutationSpeed, *points;
 int epollDesc;
+int endGame;
 epoll_data_t epd;
 epoll_event event;
 socklen_t nTmp;
@@ -41,6 +44,7 @@ void InicializeGamer(int gamerSocket) {
             sprintf(buff, "%d", i);
             printf("Index: %d\n", i);
             players[i] = gamerSocket;
+            points[i] = 0;
             wood[i] = 0;
             food[i] = 0;
             archer[i] = 0;
@@ -70,6 +74,7 @@ char* listToAttack() {
             strcat(result, buff);
         }
     }
+    strcat(result, "e");
     return result;
 }
 
@@ -81,7 +86,7 @@ void *addResources(void *threadID) {
                 wood[i] += woodSpeed[i];
                 food[i] += foodSpeed[i];
                 char buff[255];
-                int n = sprintf(buff, "r%d %d", wood[i], food[i]);
+                int n = sprintf(buff, "x%d %de", wood[i], food[i]);
                 write(players[i], buff, n+1);
                 printf("Surowce gracz %d\n", i);
             }
@@ -91,24 +96,71 @@ void *addResources(void *threadID) {
     pthread_exit(NULL);
 }
 
+void theEnd(int pl) {
+    if (endGame == 0) {
+        endGame = 1;
+        char buff[255];
+        int l = sprintf(buff, "WINNER%de", pl);
+        for (int i = 0; i < MAX_GAMER; i++) {
+            if (players[i] >= 0)
+                write(players[i], buff, l-1);
+        }
+        endGame = 2;
+    }
+}
+
+
 void *sendAttack(void *args) {
     char *str = (char *) args;
     int attacker, target, archers, spears;
     sscanf(str, "%d %d %d %d", &attacker, &target, &archers, &spears);
+    if (archer[attacker] < archers || spear[attacker] < spears || archers+spears < 20) {
+        char buff[255];
+        int l = sprintf(buff, "s-1 -1 -1 -1 -1e");
+        write(players[attacker], buff, l-1);
+        pthread_exit(NULL);
+    }
     archer[attacker] -= archers;
     spear[attacker] -= spears;
+    char buff[255];
+    int l = sprintf(buff, "s%d %de", archer[attacker], spear[attacker]);
+    write(players[attacker], buff, l-1);
     sleep(5);
     int attack, deff;
     attack = archers * ARCHER_ATTACK + spears * SPEAR_ATTACK;
-    deff = archer[target] * ARCHER_DEFF + spear[target] * ARCHER_DEFF;
+    deff = archer[target] * ARCHER_DEFF + spear[target] * ARCHER_DEFF + wall[target]*WALL_DEFF;
     if (attack > deff) {
         archer[target] = 0;
         spear[target] = 0;
         archers -= archers * deff/attack;
         spears -= spears * deff/attack;
+        int takenWood = 0, takenFood = 0;
+        int cap = CAP * (archers+spears);
+        if (cap < wood[target]){
+            takenWood = cap;
+            wood[target] -= takenWood;
+        } else {
+            takenWood = wood[target];
+            wood[target] = 0;
+        }
+        if (cap < food[target]) {
+            takenFood = cap;
+            food[target] -= cap;
+        } else {
+            takenFood = food[target];
+            food[target] = 0;
+        }
         sleep(5);
         archer[attacker] += archers;
         spear[attacker] += spears;
+        food[attacker] += takenFood;
+        wood[attacker] += takenWood;
+        points[attacker]++;
+        if (points[attacker] > MAX_GAMER) {
+            theEnd(attacker);
+        }
+        l = sprintf(buff, "h%d %d %d %d %de", archer[attacker], spear[attacker], points[attacker], wood[attacker], food[attacker]);
+        write(players[attacker], buff, l-1);
     } else {
         archer[target] -= archer[target] * deff/attack;
         spear[target] -= spear[target] * deff/attack;
@@ -121,7 +173,10 @@ void *acceptAndInicializeGamer(void *threadID){
     nTmp = sizeof(struct sockaddr);
     while (1) {
         nClientSocket = accept(nSocket, (struct sockaddr*) &stClientAddr, &nTmp);
-        if (numberOfGamers < MAX_GAMER) {
+        sleep(2);
+        char buff[30];
+        read(nClientSocket, buff, 20);
+        if (!strcmp(buff, INITIAL_MESSAGE) && numberOfGamers < MAX_GAMER) {
             printf("%d\n", nClientSocket);
             InicializeGamer(nClientSocket);
         } else 
@@ -133,10 +188,12 @@ void *acceptAndInicializeGamer(void *threadID){
 
 void inicialize(){
     nFoo = 1;
+    endGame = 0;
     numberOfGamers = 0;
     epollDesc = epoll_create1(0);
     wood = (int*)malloc(MAX_GAMER*sizeof(int));
     food = (int*)malloc(MAX_GAMER*sizeof(int));
+    points = (int*)malloc(MAX_GAMER*sizeof(int));
     archer = (int*)malloc(MAX_GAMER*sizeof(int));
     players = (int*)malloc(MAX_GAMER*sizeof(int));
     for (int i = 0; i < MAX_GAMER; i++)
@@ -157,6 +214,31 @@ void clear() {
     
 }
 
+int upgrade(int pl, char t) {
+    switch (t) {
+        case 'w':
+            if (wood[pl] >= woodSpeed[pl]*10 && food[pl] >= woodSpeed[pl]*2) {
+                woodSpeed[pl] *= 1.1;
+                return woodSpeed[pl];
+            }
+            return -1;
+            break;
+        case 'f':
+            if (wood[pl] >= foodSpeed[pl]*10 && food[pl] >= foodSpeed[pl]*2) {
+                foodSpeed[pl] *= 1.1;
+                return foodSpeed[pl];
+            }
+            return -1;
+        case 'd':
+            if (wood[pl] >= wall[pl]*wall[pl]*1000 && food[pl] >= wall[pl]*250) {
+                wall[pl] += 1;
+                return wall[pl];
+            }
+            return -1;
+    }
+    return -1;
+}
+
 void closePlayer(int p) {
     printf("PLAYER %d CLOSE\n", p);
     close(players[p]);
@@ -165,7 +247,6 @@ void closePlayer(int p) {
 }
 
 int main(int argc, char* argv[]){
-
    inicialize();
    /* address structure */
    memset(&stAddr, 0, sizeof(struct sockaddr));
@@ -202,32 +283,33 @@ int main(int argc, char* argv[]){
    if (pthread_create(&thread[1], NULL, addResources, (void *)t) < 0)
        printf("ERROR \n");
    while (1) {
+       if (endGame == 2) {
+           endGame = 0;
+           break;
+       }
        epoll_wait(epollDesc, &event, 1, -1);
        for (unsigned int pl = 0; pl < MAX_GAMER; pl++) {
            if (players[pl] != -1 && event.data.u32 == (pl+1) * 1000) {
                 printf("button: %d\n", pl);
-                char buff[255];
+                char buff[255], helper[2];
                 int l;
-                l = read(players[pl], buff, 255);
+                l = read(players[pl], buff, 1);
                 if (l < 1)
                     closePlayer(pl);
                 else {
+                    helper[0] = '0';
+                    while (helper[0] != 'e') {
+                        l = read(players[pl], helper, 1);
+                        if (l) strcat(buff, helper);
+                    }
                     char message[255];
                     int l;
                     printf("%s\n", buff);
                     event.data.u32 = 0;
                     switch (buff[0]) {
                         case 'u': // upgrade
-                            if (buff[1] == 'w') {
-                                woodSpeed[pl] *= 1.1;
-                                l = sprintf(message, "s w %d", woodSpeed[pl]);
-                                write(players[pl], message, l+1);
-                            }
-                            else {
-                                foodSpeed[pl] *= 1.1;
-                                l = sprintf(message, "s f %d", foodSpeed[pl]);
-                                write(players[pl], message, l+1);
-                            }
+                            l = sprintf(message, "u%c%de", buff[1], upgrade(pl, buff[1]));
+                            write(players[pl], message, l+1);
                             break;
                         case 'a': // want list of villages to attack
                             l = sprintf(message, "l %s", listToAttack());
@@ -236,7 +318,7 @@ int main(int argc, char* argv[]){
                         case 's' : // send attack
                             int l = strlen(buff);
                             char s[l];
-                            strncpy(s, buff+1, l-1);
+                            strncpy(s, buff+1, l-2);
                             s[l-1] = '\0';
                             pthread_t a;
                             pthread_create(&a, NULL, sendAttack, (void *)s);
