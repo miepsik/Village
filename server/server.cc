@@ -24,6 +24,16 @@
 #define WALL_DEFF 10
 #define CAP 15
 #define INITIAL_MESSAGE "HELLOe"
+#define ARCHER_WOOD 5
+#define ARCHER_FOOD 20
+#define SPEAR_WOOD 10
+#define SPEAR_FOOD 15
+#define WOOD_WOOD_COST 9
+#define WOOD_FOOD_COST 3
+#define FOOD_WOOD_COST 11
+#define FOOD_FOOD_COST 1
+#define WALL_WOOD_COST 1000
+#define WALL_FOOD_COST 250
 
 int nSocket, nClientSocket;
 int nBind, nListen;
@@ -41,7 +51,6 @@ void InicializeGamer(int gamerSocket) {
     char buff[4];
     for (int i = 0; i < MAX_GAMER; i++){
         if (players[i] == -1){
-            sprintf(buff, "%d", i);
             printf("Index: %d\n", i);
             players[i] = gamerSocket;
             points[i] = 0;
@@ -51,8 +60,11 @@ void InicializeGamer(int gamerSocket) {
             spear[i] = 0;
             woodSpeed[i] = 10;
             foodSpeed[i] = 10;
-            wall[i] = 0;
-            recrutationSpeed[i] = 5000;
+            wall[i] = 1;
+            //recrutationSpeed[i] = 5000;
+            sprintf(buff, "h%d 10 10 %d %d %d %d %d %d %d %d %d %de", i, ARCHER_WOOD, ARCHER_FOOD, SPEAR_WOOD, SPEAR_FOOD, 
+                    woodSpeed[i] * WOOD_WOOD_COST, woodSpeed[i] * WOOD_FOOD_COST, foodSpeed[i] * FOOD_WOOD_COST, foodSpeed[i] * FOOD_FOOD_COST,
+                    wall[i] * WALL_WOOD_COST, wall[i] * WOOD_FOOD_COST);
             write(gamerSocket, buff, 4);
             event.events = EPOLLIN;
             epd.u32 = (i+1)*1000;
@@ -214,29 +226,36 @@ void clear() {
     
 }
 
-int upgrade(int pl, char t) {
+char* upgrade(int pl, char t) {
+    char *buff = (char*) malloc(55*sizeof(char));
+    sprintf(buff, "-1 -1 -1");
     switch (t) {
         case 'w':
-            if (wood[pl] >= woodSpeed[pl]*10 && food[pl] >= woodSpeed[pl]*2) {
+            if (wood[pl] >= woodSpeed[pl]*WOOD_WOOD_COST && food[pl] >= woodSpeed[pl]*WOOD_FOOD_COST) {
+                wood[pl] -= woodSpeed[pl]*WOOD_WOOD_COST;
+                food[pl] -= woodSpeed[pl]*WOOD_FOOD_COST;
                 woodSpeed[pl] *= 1.1;
-                return woodSpeed[pl];
+                sprintf(buff, "%d %d %d", woodSpeed[pl], woodSpeed[pl]*WOOD_WOOD_COST, woodSpeed[pl]*WOOD_FOOD_COST);
             }
-            return -1;
             break;
         case 'f':
-            if (wood[pl] >= foodSpeed[pl]*10 && food[pl] >= foodSpeed[pl]*2) {
+            if (wood[pl] >= foodSpeed[pl]*FOOD_WOOD_COST && food[pl] >= foodSpeed[pl]*FOOD_FOOD_COST) {
+                wood[pl] -= foodSpeed[pl]*FOOD_WOOD_COST;
+                food[pl] -= foodSpeed[pl]*FOOD_FOOD_COST;
                 foodSpeed[pl] *= 1.1;
-                return foodSpeed[pl];
+                sprintf(buff, "%d %d %d", foodSpeed[pl], foodSpeed[pl]*FOOD_WOOD_COST, foodSpeed[pl]*FOOD_FOOD_COST);
             }
-            return -1;
+            break;
         case 'd':
-            if (wood[pl] >= wall[pl]*wall[pl]*1000 && food[pl] >= wall[pl]*250) {
+            if (wood[pl] >= wall[pl]*wall[pl]*WALL_WOOD_COST && food[pl] >= wall[pl]*WALL_FOOD_COST) {
+                wood[pl] -= wall[pl]*wall[pl]*WALL_WOOD_COST;
+                food[pl] -= wall[pl]*WALL_FOOD_COST;
                 wall[pl] += 1;
-                return wall[pl];
-            }
-            return -1;
+                sprintf(buff, "%d %d %d", wall[pl], wall[pl]*WALL_WOOD_COST, wall[pl]*WALL_FOOD_COST);
+            }   
+            break;
     }
-    return -1;
+    return buff;
 }
 
 void closePlayer(int p) {
@@ -244,6 +263,30 @@ void closePlayer(int p) {
     close(players[p]);
     players[p] = -2;
     
+}
+
+void recruit(int pl, char t, int x) {
+    char *buff = (char*) malloc(55*sizeof(int));
+    int l = sprintf(buff, "r%c-1e", t);
+    switch (t) {
+        case 'a':
+            if (wood[pl] >= x*ARCHER_WOOD && food[pl] >= x*ARCHER_FOOD) {
+                archer[pl] += x;
+                wood[pl] -= x*ARCHER_WOOD;
+                food[pl] -= x*ARCHER_FOOD;
+                l = sprintf(buff, "r%c%de", t, archer[pl]);
+            }
+            break;
+        case 's':
+  	 	    if (wood[pl] >= x*SPEAR_WOOD && food[pl] >= x*SPEAR_FOOD) {
+                spear[pl] += x;
+                wood[pl] -= x*SPEAR_WOOD;
+                food[pl] -= x*SPEAR_FOOD;
+                l = sprintf(buff, "r%c%de", t, spear[pl]);
+            }
+            break;
+    }
+    write(players[pl], buff, l);
 }
 
 int main(int argc, char* argv[]){
@@ -300,15 +343,15 @@ int main(int argc, char* argv[]){
                     helper[0] = '0';
                     while (helper[0] != 'e') {
                         l = read(players[pl], helper, 1);
-                        if (l) strcat(buff, helper);
+                        if (l>0) strcat(buff, helper);
                     }
-                    char message[255];
+                    char message[255], *s;
                     int l;
                     printf("%s\n", buff);
                     event.data.u32 = 0;
                     switch (buff[0]) {
                         case 'u': // upgrade
-                            l = sprintf(message, "u%c%de", buff[1], upgrade(pl, buff[1]));
+                            l = sprintf(message, "u%c%se", buff[1], upgrade(pl, buff[1]));
                             write(players[pl], message, l+1);
                             break;
                         case 'a': // want list of villages to attack
@@ -316,14 +359,21 @@ int main(int argc, char* argv[]){
                             write(players[pl], message, l+1);
                             break;
                         case 's' : // send attack
-                            int l = strlen(buff);
-                            char s[l];
+                            l = strlen(buff);
+                            s = (char*)malloc((l-1)*sizeof(char));
                             strncpy(s, buff+1, l-2);
-                            s[l-1] = '\0';
+                            s[l-2] = '\0';
                             pthread_t a;
                             pthread_create(&a, NULL, sendAttack, (void *)s);
                             break;
+                        case 'r' : // recruit
+                            int l = strlen(buff);
+                            s = (char*)malloc((l-2)*sizeof(char));
+                            strncpy(s, buff+2,l-3);
+                            sscanf(s, "%d", &l);
+                            recruit(pl, buff[1], l);
 
+                            break;
                     }
                 }
            }
