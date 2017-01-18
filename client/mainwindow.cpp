@@ -11,24 +11,24 @@
 #include <arpa/inet.h>
 
 
-
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    QPixmap wood("/media/miebs/Dane1/Uczelnia/semestr5/sk/village/Village/client/pics/Wood_Icon.png");
-    QPixmap food("/media/miebs/Dane1/Uczelnia/semestr5/sk/village/Village/client/pics/food.png");
+    QPixmap wood("/home/cranberry/Desktop/Village/client/pics/Wood_Icon.png");
+    QPixmap food("/home/cranberry/Desktop/Village/client/pics/food.png");
     ui->woodIcon->setPixmap(wood);
     ui->foodIcon->setPixmap(food);
     playerID = "-1";
+    // ui->availableTarget->addItem("23"); <-- mock for checking attack sending
     connectTcp();
 }
 
 void MainWindow::connectTcp()
 {
-    QByteArray data; // <-- fill with data
-
+    QByteArray data;
+    data = "HELLOe";
     pSocket = new QTcpSocket( this );
     connect( pSocket, SIGNAL(readyRead()), SLOT(readTcpData()) );
 
@@ -51,10 +51,41 @@ void MainWindow::readTcpData()
 
 MainWindow::~MainWindow()
 {
+    pSocket->close();
     delete ui;
 }
 
-void MainWindow::on_pushButton_clicked()
+void MainWindow::on_attackButton_clicked()
 {
-    pSocket->write(" wood");
+    if(ui->availableTarget->count()==0)
+        pSocket->write("ae");
+    else
+    {
+        QByteArray data = "s " + playerID + " " + ui->availableTarget->currentText().toLatin1() + " " + ui->archerAttack->toPlainText().toLatin1() + " " + ui->spearAttack->toPlainText().toLatin1() + "e";
+        pSocket->write(data);
+    }
+}
+
+void MainWindow::on_woodUpgrade_clicked()
+{
+    pSocket->write("uwe");
+}
+
+void MainWindow::on_foodUpgrade_clicked()
+{
+    pSocket->write("ufe");
+}
+
+void MainWindow::on_archerRec_clicked()
+{
+    QByteArray data = "ra" + ui->aRecruiting->toPlainText().toLatin1() + "e";
+    pSocket->write( data );
+    ui->aRecruiting->clear();
+}
+
+void MainWindow::on_spearRec_clicked()
+{
+    QByteArray data = "rs" + ui->sRecruiting->toPlainText().toLatin1() + "e";
+    pSocket->write( data );
+    ui->sRecruiting->clear();
 }

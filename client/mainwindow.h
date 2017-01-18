@@ -24,7 +24,11 @@ public:
 
 public slots:
     void readTcpData();
-    void on_pushButton_clicked();
+    void on_attackButton_clicked();
+    void on_woodUpgrade_clicked();
+    void on_foodUpgrade_clicked();
+    void on_archerRec_clicked();
+    void on_spearRec_clicked();
 };
 
 #endif // MAINWINDOW_H
