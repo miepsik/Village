@@ -21,7 +21,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->woodIcon->setPixmap(wood);
     ui->foodIcon->setPixmap(food);
     playerID = "-1";
-    // ui->availableTarget->addItem("23"); <-- mock for checking attack sending
+     ui->availableTarget->addItem("23");// <-- mock for checking attack sending
     connectTcp();
 }
 
@@ -41,11 +41,38 @@ void MainWindow::connectTcp()
 void MainWindow::readTcpData()
 {
     QByteArray data = pSocket->readAll();
-    if (playerID == "-1") {
+    QByteArray temp = "";
+    if (playerID == "-1")
         playerID = data;
-        ui->woodCost->append(playerID + "\n");
-    } else {
-        ui->woodAmmount->setText(data);
+    else
+    {
+        switch(data[0])
+        {
+
+            case 'x' :          //TODO! set actual amounts instead of mocks
+            {
+                ui->woodAmmount->setText("5");
+                ui->foodAmmount->setText("6");
+            };break;
+            case 'u' :
+            {
+                for(int i=2;i<data.size()-2;i++)        //when sending with endline - if not, change to -2 to -1
+                    temp=temp+data[i];
+                if(data[1]=='w')
+                    ui->woodSpeed->setText(temp);
+                else
+                    ui->foodSpeed->setText(temp);
+            };break;
+            case 'r' :
+            {
+                for(int i=2;i<data.size()-2;i++)
+                    temp=temp+data[i];
+                if(data[1]=='a') ui->archersNumber->setText(temp);
+                    else ui->spearmenNumber->setText(temp);
+            }
+            //TODO! case 'h', case 'a' a .. .. .. ..e - villages to attack
+            //h arch spear points n_wood n_food.e - if successful attack
+        }
     }
 }
 
@@ -59,7 +86,7 @@ void MainWindow::on_attackButton_clicked()
 {
     if(ui->availableTarget->count()==0)
         pSocket->write("ae");
-    else
+    else if((ui->archerAttack->toPlainText().length()>0)&&(ui->spearAttack->toPlainText().length()>0))
     {
         QByteArray data = "s " + playerID + " " + ui->availableTarget->currentText().toLatin1() + " " + ui->archerAttack->toPlainText().toLatin1() + " " + ui->spearAttack->toPlainText().toLatin1() + "e";
         pSocket->write(data);
@@ -78,14 +105,20 @@ void MainWindow::on_foodUpgrade_clicked()
 
 void MainWindow::on_archerRec_clicked()
 {
-    QByteArray data = "ra" + ui->aRecruiting->toPlainText().toLatin1() + "e";
-    pSocket->write( data );
-    ui->aRecruiting->clear();
+    if(ui->aRecruiting->toPlainText().length()!=0) //doesn't send when field is empty
+    {
+        QByteArray data = "ra" + ui->aRecruiting->toPlainText().toLatin1() + "e";
+        pSocket->write( data );
+        ui->aRecruiting->clear();
+    }
 }
 
 void MainWindow::on_spearRec_clicked()
 {
-    QByteArray data = "rs" + ui->sRecruiting->toPlainText().toLatin1() + "e";
-    pSocket->write( data );
-    ui->sRecruiting->clear();
+    if(ui->sRecruiting->toPlainText().length()!=0)
+    {
+        QByteArray data = "rs" + ui->sRecruiting->toPlainText().toLatin1() + "e";
+        pSocket->write( data );
+        ui->sRecruiting->clear();
+    }
 }

@@ -181,6 +181,9 @@
        <height>31</height>
       </rect>
      </property>
+     <property name="placeholderText">
+      <string/>
+     </property>
     </widget>
     <widget class="QLabel" name="archerLabel">
      <property name="geometry">
