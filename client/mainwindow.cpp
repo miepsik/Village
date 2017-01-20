@@ -21,7 +21,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->woodIcon->setPixmap(wood);
     ui->foodIcon->setPixmap(food);
     playerID = "-1";
-     ui->availableTarget->addItem("23");// <-- mock for checking attack sending
     connectTcp();
 }
 
@@ -42,17 +41,28 @@ void MainWindow::readTcpData()
 {
     QByteArray data = pSocket->readAll();
     QByteArray temp = "";
+    int xx,i;
     if (playerID == "-1")
         playerID = data;
+    //TODO!! else if z wynikiem zwycięzcy
     else
     {
         switch(data[0])
         {
-
-            case 'x' :          //TODO! set actual amounts instead of mocks
+            case 'x' :
             {
-                ui->woodAmmount->setText("5");
-                ui->foodAmmount->setText("6");
+                i=0;
+                while(data[i]!= ' ') i++;
+                xx = i;
+                for(i=1;i<data.size()-2;i++) {
+                    if (i==xx) {
+                        ui->woodAmmount->setText(temp);
+                        temp = "";
+                    }
+                    else
+                        temp=temp+data[i];
+                }
+                ui->foodAmmount->setText(temp);
             };break;
             case 'u' :
             {
@@ -69,9 +79,27 @@ void MainWindow::readTcpData()
                     temp=temp+data[i];
                 if(data[1]=='a') ui->archersNumber->setText(temp);
                     else ui->spearmenNumber->setText(temp);
-            }
-            //TODO! case 'h', case 'a' a .. .. .. ..e - villages to attack
-            //h arch spear points n_wood n_food.e - if successful attack
+            };break;
+            case 'a' :
+            {
+                for(int i=1;i<data.size()-2;i++)
+                    temp=temp+data[i];
+                QList<QByteArray> pieces = temp.split(' ');
+                foreach( const QByteArray &piece, pieces)
+                {
+                    ui->availableTarget->addItem(piece);
+                }
+            };break;
+            case 'h' :
+            {
+                for(int i=1;i<data.size()-2;i++)
+                    temp=temp+data[i];
+                QList<QByteArray> pieces = temp.split(' ');
+                ui->archersNumber->setText(pieces[0]);
+                ui->spearmenNumber->setText(pieces[1]);
+                ui->woodAmmount->setText(pieces[3]);
+                ui->foodAmmount->setText(pieces[4]);
+            };break;
         }
     }
 }
