@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "qmessagebox.h"
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -40,11 +41,27 @@ void MainWindow::connectTcp()
 void MainWindow::readTcpData()
 {
     QByteArray data = pSocket->readAll();
-    QByteArray temp = "";
+    QByteArray temp = "",res=" Game finished! You ";
+    QMessageBox msgBox;
     int xx,i;
-    if (playerID == "-1")
+    if (playerID == "-1"){
         playerID = data;
-    //TODO!! else if z wynikiem zwycięzcy
+        playerID.remove(playerID.length()-1,1); //deleting the newline - unnecessary if not sent
+    }
+    else if(data.contains("WINNER"))
+    {
+        for(int i=6;i<data.size()-2;i++)
+            temp=temp+data[i];
+        if(temp == playerID)
+            res = res+"win!";
+        else
+            res = res+"lose.\nThe winner is player " + temp;
+        msgBox.setWindowTitle("Game finished!");
+        msgBox.setText(res);
+        msgBox.exec();
+        if(msgBox.Accepted==true)
+            qApp->exit();
+    }
     else
     {
         switch(data[0])
