@@ -62,11 +62,11 @@ void InicializeGamer(int gamerSocket) {
             foodSpeed[i] = 10;
             wall[i] = 1;
             //recrutationSpeed[i] = 5000;
-            sprintf(buff, "h%d 10 10 %d %d %d %d %d %d %d %d %d %de", i, ARCHER_WOOD, ARCHER_FOOD, SPEAR_WOOD, SPEAR_FOOD, 
+            int l = sprintf(buff, "h%d 10 10 %d %d %d %d %d %d %d %d %d %de", i, ARCHER_WOOD, ARCHER_FOOD, SPEAR_WOOD, SPEAR_FOOD, 
                     woodSpeed[i] * WOOD_WOOD_COST, woodSpeed[i] * WOOD_FOOD_COST, foodSpeed[i] * FOOD_WOOD_COST, foodSpeed[i] * FOOD_FOOD_COST,
                     wall[i] * WALL_WOOD_COST, wall[i] * WOOD_FOOD_COST);
             printf("wiadomość zrobiona\n");
-            write(gamerSocket, buff, 4);
+            write(gamerSocket, buff, l+1);
             printf("i wysłana");
             event.events = EPOLLIN;
             epd.u32 = (i+1)*1000;
@@ -103,7 +103,7 @@ void *addResources(void *threadID) {
                 char buff[255];
                 int n = sprintf(buff, "x%d %de", wood[i], food[i]);
                 write(players[i], buff, n+1);
-                printf("Surowce gracz %d\n", i);
+                //printf("Surowce gracz %d\n", i);
             }
         }
         sleep(1);
@@ -338,6 +338,9 @@ int main(int argc, char* argv[]){
            if (players[pl] != -1 && event.data.u32 == (pl+1) * 1000) {
                 printf("button: %d\n", pl);
                 char buff[255], helper[2];
+                memset(buff, 0, 255);
+                buff[0] = '\0';
+                printf("%s\n", buff);
                 int l;
                 l = read(players[pl], buff, 1);
                 if (l < 1)
