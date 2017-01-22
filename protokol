@@ -1,18 +1,36 @@
-Wszystkie komunikaty kończą się znakiem e jak end
+﻿Wszystkie komunikaty kończą się znakiem e jak end
 
 klient chce się dołączyć do rozgrywki - wysyła "HELLOe"
 serwer odpowiada przydzielonym indeksem gracza, -1 oznacza, że brak miejsc
+//edit cały komunikat będzie wyglądał tak - "h2 10 20 5 20 10 15 100 20 100 20 1000 250e"
+2 - indeks gracza
+10-tyle przybywa drewna na sekundę
+20-jedzenia na sekunkę
+5-tyle drewna kosztuje jeden łucznik
+20-jedzenie na łucznika
+10-drewna na włucznika
+15-jedzenie na włucznika
+100-drewno na rozbudowanie tartaku
+20-jedzenie na rozbudowanie tartaku
+100-drewno na rozbudowanie jedzeniowni
+20-jedzenie na rozbudowanie jedzeniowni
+1000-drewno na rozbudowanie muru
+250-jedzenie na rozbucowanie muru
 
 podniesienie tartaku o poziom wyżej - klient wysyła "uwe"
-serwer odpowiada - "uw200e" gdzie 200 to nowa liczba produkowanych jednostek na s
+serwer odpowiada - "uw200 500 300e" gdzie 
+200 to nowa liczba produkowanych jednostek na s
+\\edit 500 to ilość drewna potrzebna na kolejną rozbudowę
+\\edit 300 ilość jedzenia na kolejną rozbudowę
 podniesienie budynku od jedzenia - klient wysyła "ufe"
-serwer odpowiada - "uf200e" 
+serwer odpowiada - "uf200 500 300" 
 podniesienie muru o poziom wyżej - klient wysyła "ude"
-serwer odpowiada - "ud13e" gdzie 13 to nowy poziom muru
+serwer odpowiada - "ud13 500 300e" gdzie 13 to nowy poziom muru
 
 gracz rekrutuje łuczników - klient wysyła "ra10e" jeśli chce 10
 serwer odpowiada "ra50e" jeśli gracz ma teraz 50 łuczników
 gracz rekrutuje włuczników - klient wysyła "rs10e" jeśli chce 10
+serwer odpowie "rs-1e" jeśli wystąpi błąd
 
 gracz chce zaatakować i prosi o listę możliwych celów - "ae"
 serwer odpowiada "a1 2 3 10 22 30e", są to indeksy wiosek do zaatakowania
