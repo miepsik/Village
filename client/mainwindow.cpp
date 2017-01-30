@@ -45,8 +45,9 @@ void MainWindow::readTcpData()
     QMessageBox msgBox;
     int xx,i;
     if (playerID == "-1"){
-        playerID = data;
-        playerID.remove(playerID.length()-1,1); //deleting the newline - unnecessary if not sent
+        QList<QByteArray> x = data.remove(0, 1).split(' ');
+        playerID = x[0];
+        //playerID.remove(playerID.length()-1); //deleting the newline - unnecessary if not sent
     }
     else if(data.contains("WINNER"))
     {
