@@ -2,6 +2,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/socket.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <signal.h>
@@ -16,7 +18,7 @@
 
 #define SERVER_PORT 1234
 #define QUEUE_SIZE 5
-#define MAX_GAMER 2
+#define MAX_GAMER 3
 #define ARCHER_ATTACK 5
 #define ARCHER_DEFF 20
 #define SPEAR_ATTACK 20
@@ -42,6 +44,7 @@ int numberOfGamers;
 int *wood, *food, *archer, *spear, *players, *woodSpeed, *foodSpeed, *wall, *recrutationSpeed, *points;
 int epollDesc;
 int endGame;
+int resSem, uniSem;
 epoll_data_t epd;
 epoll_event event;
 socklen_t nTmp;
@@ -79,12 +82,12 @@ void InicializeGamer(int gamerSocket) {
     numberOfGamers++;
 }
 
-char* listToAttack() {
+char* listToAttack(int x) {
     static char result[255];
     char buff[5];
     result[0] = '\0';
     for (int i = 0; i <MAX_GAMER; i++) {
-        if (players[i] != -1) {
+        if (players[i] != -1 && i != x) {
             sprintf(buff, "%d ", i);
             strcat(result, buff);
         }
@@ -129,8 +132,10 @@ void theEnd(int pl) {
 
 void *sendAttack(void *args) {
     char *str = (char *) args;
+    printf("przekazane do wątku: %s\n", str);
     int attacker, target, archers, spears;
     sscanf(str, "%d %d %d %d", &attacker, &target, &archers, &spears);
+    printf("att: %d, target: %d arch: %d spear: %d\n", attacker, target, archers, spears);
     if (archer[attacker] < archers || spear[attacker] < spears || archers+spears < 20) {
         char buff[255];
         int l = sprintf(buff, "s-1 -1 -1 -1 -1e");
@@ -167,6 +172,8 @@ void *sendAttack(void *args) {
             takenFood = food[target];
             food[target] = 0;
         }
+        l = sprintf(buff, "b%d %d %d %d %de", attacker, wood[target], food[target], archer[target], spear[target]);
+        write(players[target], buff, l+1);
         sleep(5);
         archer[attacker] += archers;
         spear[attacker] += spears;
@@ -222,6 +229,12 @@ void inicialize(){
     foodSpeed = (int*)malloc(MAX_GAMER*sizeof(int));
     wall = (int*)malloc(MAX_GAMER*sizeof(int));
     recrutationSpeed = (int*)malloc(MAX_GAMER*sizeof(int));
+    resSem = semget(9999, MAX_GAMER, IPC_CREAT);
+    uniSem = semget(8888, MAX_GAMER, IPC_CREAT);
+    for (int i = 0; i < MAX_GAMER; i++) {
+        semctl(resSem, i, SETVAL, 1);
+        semctl(uniSem, i, SETVAL, 1);
+    }
 }
 
 void clear() {
@@ -348,11 +361,9 @@ int main(int argc, char* argv[]){
             epoll_wait(epollDesc, &event, 1, -1);
             for (unsigned int pl = 0; pl < MAX_GAMER; pl++) {
                 if (players[pl] != -1 && event.data.u32 == (pl+1) * 1000) {
-                    printf("button: %d\n", pl);
                     char buff[255], helper[2];
                     memset(buff, 0, 255);
                     buff[0] = '\0';
-                    printf("%s\n", buff);
                     int l;
                     l = read(players[pl], buff, 1);
                     if (l < 1)
@@ -365,7 +376,7 @@ int main(int argc, char* argv[]){
                         }
                         char message[255], *s;
                         int l;
-                        printf("%s\n", buff);
+                        printf("otrzymane: %s\n", buff);
                         event.data.u32 = 0;
                         switch (buff[0]) {
                             case 'u': // upgrade
@@ -373,7 +384,7 @@ int main(int argc, char* argv[]){
                                 write(players[pl], message, l+1);
                                 break;
                             case 'a': // want list of villages to attack
-                                l = sprintf(message, "l %s", listToAttack());
+                                l = sprintf(message, "a%s", listToAttack(pl));
                                 write(players[pl], message, l+1);
                                 printf("%s\n", message);
                                 break;
@@ -382,6 +393,7 @@ int main(int argc, char* argv[]){
                                 s = (char*)malloc((l-1)*sizeof(char));
                                 strncpy(s, buff+1, l-2);
                                 s[l-2] = '\0';
+                                printf("s: %s\n", s);
                                 pthread_t a;
                                 pthread_create(&a, NULL, sendAttack, (void *)s);
                                 break;

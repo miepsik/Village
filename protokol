@@ -52,6 +52,13 @@ jeśli atak się udał to do gracza wracają wosjka "h10 20 3 850 730e" gdzie
 850 - nowa liczba drewna (to co było + to ile zrabowało wojsko)
 730 - jedzenie na tej samej zasadzie
 
+zaatakowany gracz otrzymuje komunikat "b18 250 300 12 9e" gdzie
+18 - numer gracza który go zaatakował
+250 - tyle drewna mu pozostało
+300 - tyle jedzenia mu pozostało
+12 - tyle łuczników mu pozostało
+9 - tyle włuczników mu pozostało
+
 jeśli wszyscy zginęli to nie ma żadnej wiadomości
 serwer co sekundę dodaje surowce zgodnie z poziomem budynków z komunikatem "x200 500e" gdzie
 200 - liczba jednostek drewna
