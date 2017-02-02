@@ -99,8 +99,6 @@ char* listToAttack(int x) {
 
 void *addResources(void *threadID) {
     while (1) {
-        if (endGame == 2)
-            break;
         for (int i = 0; i < MAX_GAMER; i++) {
             if (players[i] >= 0) {
                 wood[i] += woodSpeed[i];
@@ -196,17 +194,17 @@ void *sendAttack(void *args) {
 void *acceptAndInicializeGamer(void *threadID){
     nTmp = sizeof(struct sockaddr);
     while (1) {
-        if (endGame == 2)
-            break;
         nClientSocket = accept(nSocket, (struct sockaddr*) &stClientAddr, &nTmp);
-        sleep(2);
-        char buff[30];
-        read(nClientSocket, buff, 20);
-        if (!strcmp(buff, INITIAL_MESSAGE) && numberOfGamers < MAX_GAMER) {
-            printf("%d\n", nClientSocket);
-            InicializeGamer(nClientSocket);
-        } else 
-            write(nClientSocket, "-1\0", 3);
+        if (nClientSocket > 0) {
+            sleep(2);
+            char buff[30];
+            read(nClientSocket, buff, 20);
+            if (!strcmp(buff, INITIAL_MESSAGE) && numberOfGamers < MAX_GAMER) {
+                printf("%d\n", nClientSocket);
+                InicializeGamer(nClientSocket);
+            } else 
+                write(nClientSocket, "-1\0", 3);
+        }
     }
     pthread_exit(NULL);
 }
@@ -242,7 +240,6 @@ void clear() {
         if (players[i] != -1)
             close(players[i]);
     }
-    close(nSocket);
     free(wood);
     free(food);
     free(points);
@@ -318,42 +315,43 @@ void recruit(int pl, char t, int x) {
 }
 
 int main(int argc, char* argv[]){
-    while (1) {
+    
+    /* address structure */
+    memset(&stAddr, 0, sizeof(struct sockaddr));
+    stAddr.sin_family = AF_INET;
+    stAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    stAddr.sin_port = htons(SERVER_PORT);
+
+    /* create a socket */
+    nSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if (nSocket < 0) {
+        fprintf(stderr, "%s: Can't create a socket.\n", argv[0]);
+        exit(1);
+    }
+    setsockopt(nSocket, SOL_SOCKET, SO_REUSEADDR, (char*)&nFoo, sizeof(nFoo));
+ 
+    /* bind a name to a socket */
+    nBind = bind(nSocket, (struct sockaddr*)&stAddr, sizeof(struct sockaddr));
+    if (nBind < 0){
+        fprintf(stderr, "%s: Can't bind a name to a socket.\n", argv[0]);
+        exit(1);
+    }
+    /* specify queue size */
+    nListen = listen(nSocket, QUEUE_SIZE);
+    if (nListen < 0){
+        fprintf(stderr, "%s: Can't set queue size.\n", argv[0]);
+    }
+
+    pthread_t thread[2];
+    long t = 1;
+    printf("%d\n", nSocket);
+    if (pthread_create(&thread[0], NULL, acceptAndInicializeGamer, (void *)t) < 0)
+        printf("ERROR \n");
+    t++;
+    if (pthread_create(&thread[1], NULL, addResources, (void *)t) < 0)
+        printf("ERROR \n");
+    while (2) {
         inicialize();
-        /* address structure */
-        memset(&stAddr, 0, sizeof(struct sockaddr));
-        stAddr.sin_family = AF_INET;
-        stAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-        stAddr.sin_port = htons(SERVER_PORT);
-
-        /* create a socket */
-        nSocket = socket(AF_INET, SOCK_STREAM, 0);
-        if (nSocket < 0) {
-            fprintf(stderr, "%s: Can't create a socket.\n", argv[0]);
-            exit(1);
-        }
-        setsockopt(nSocket, SOL_SOCKET, SO_REUSEADDR, (char*)&nFoo, sizeof(nFoo));
-
-        /* bind a name to a socket */
-        nBind = bind(nSocket, (struct sockaddr*)&stAddr, sizeof(struct sockaddr));
-        if (nBind < 0){
-            fprintf(stderr, "%s: Can't bind a name to a socket.\n", argv[0]);
-            exit(1);
-        }
-        /* specify queue size */
-        nListen = listen(nSocket, QUEUE_SIZE);
-        if (nListen < 0){
-            fprintf(stderr, "%s: Can't set queue size.\n", argv[0]);
-        }
-
-        pthread_t thread[2];
-        long t = 1;
-        printf("%d\n", nSocket);
-        if (pthread_create(&thread[0], NULL, acceptAndInicializeGamer, (void *)t) < 0)
-            printf("ERROR \n");
-        t++;
-        if (pthread_create(&thread[1], NULL, addResources, (void *)t) < 0)
-            printf("ERROR \n");
         while (1) {
             if (endGame == 2) {
                 break;
