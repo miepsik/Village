@@ -136,6 +136,7 @@ void MainWindow::on_attackButton_clicked()
     {
         QByteArray data = "s " + playerID + " " + ui->availableTarget->currentText().toLatin1() + " " + ui->archerAttack->toPlainText().toLatin1() + " " + ui->spearAttack->toPlainText().toLatin1() + "e";
         pSocket->write(data);
+		ui->availableTarget->clear();
     }
 }
 
