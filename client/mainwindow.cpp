@@ -133,6 +133,14 @@ void MainWindow::readTcpData()
 				msgBox.setText(temp);
 				msgBox.exec();
 			};break;
+            case 's' :
+            {
+                data.remove(0, 1);
+                QList<QByteArray> pieces = data.split(' ');
+                ui->archersNumber->setText(pieces[0]);
+                pieces[1].remove(pieces[1].length(), 1);
+                ui->spearmenNumber->setText(pieces[1]);
+            };break;
         }
     }
 }
