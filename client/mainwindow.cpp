@@ -41,7 +41,7 @@ void MainWindow::connectTcp()
 void MainWindow::readTcpData()
 {
     QByteArray data = pSocket->readAll();
-    QByteArray temp = "",res=" Game finished! You ";
+    QByteArray temp = "",res=" Game finished! You ", t="";
     QMessageBox msgBox;
     int xx,i;
     if (playerID == "-1"){
@@ -118,6 +118,21 @@ void MainWindow::readTcpData()
                 ui->woodAmmount->setText(pieces[3]);
                 ui->foodAmmount->setText(pieces[4]);
             };break;
+			case 'b' :
+			{
+				for(int i=1;i<data.size()-2;i++)
+                    temp=temp+data[i];
+                QList<QByteArray> pieces = temp.split(' ');
+				ui->woodAmmount->setText(pieces[1]);
+				ui->foodAmmount->setText(pieces[2]);
+				ui->archersNumber->setText(pieces[3]);
+				ui->spearmenNumber->setText(pieces[4]);
+				t=pieces[0];
+				temp = "You were attacked by player " + t + ". Your resources have been updated.";
+				msgBox.setWindowTitle("Attacked!");
+				msgBox.setText(temp);
+				msgBox.exec();
+			};break;
         }
     }
 }
