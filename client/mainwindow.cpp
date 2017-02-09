@@ -120,8 +120,10 @@ void MainWindow::readTcpData()
             };break;
 			case 'b' :
 			{
-				for(int i=1;i<data.size()-2;i++)
-                    temp=temp+data[i];
+				for(int i=1;i<data.size()-2;i++){
+					if(data[i]!='e')				//because of an extra sign at the end??
+						temp=temp+data[i]; 
+				}
                 QList<QByteArray> pieces = temp.split(' ');
 				ui->woodAmmount->setText(pieces[1]);
 				ui->foodAmmount->setText(pieces[2]);
