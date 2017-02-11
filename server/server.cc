@@ -98,11 +98,18 @@ char* listToAttack(int x) {
 
 
 void *addResources(void *threadID) {
+    struct sembuf s;
+    s.sem_flg = 0;
     while (1) {
         for (int i = 0; i < MAX_GAMER; i++) {
             if (players[i] >= 0) {
+                s.sem_num = i;
+                s.sem_op = -1;
+                semop(resSem, &s, 1);
                 wood[i] += woodSpeed[i];
                 food[i] += foodSpeed[i];
+                s.sem_op = 1;
+                semop(resSem, &s, 1);
                 char buff[255];
                 int n = sprintf(buff, "x%d %de", wood[i], food[i]);
                 write(players[i], buff, n+1);
@@ -129,19 +136,24 @@ void theEnd(int pl) {
 
 
 void *sendAttack(void *args) {
+    struct sembuf s;
+    s.sem_flg = 0;
     char *str = (char *) args;
-    printf("przekazane do wątku: %s\n", str);
     int attacker, target, archers, spears;
     sscanf(str, "%d %d %d %d", &attacker, &target, &archers, &spears);
-    printf("att: %d, target: %d arch: %d spear: %d\n", attacker, target, archers, spears);
     if (archer[attacker] < archers || spear[attacker] < spears || archers+spears < 20) {
         char buff[255];
         int l = sprintf(buff, "s-1 -1 -1 -1 -1e");
         write(players[attacker], buff, l-1);
         pthread_exit(NULL);
     }
+    s.sem_num = attacker;
+    s.sem_op = -1;
+    semop(uniSem, &s, 1);
     archer[attacker] -= archers;
     spear[attacker] -= spears;
+    s.sem_op = 1;
+    semop(uniSem, &s, 1);
     char buff[255];
     int l = sprintf(buff, "s%d %de", archer[attacker], spear[attacker]);
     write(players[attacker], buff, l-1);
@@ -150,12 +162,19 @@ void *sendAttack(void *args) {
     attack = archers * ARCHER_ATTACK + spears * SPEAR_ATTACK;
     deff = archer[target] * ARCHER_DEFF + spear[target] * ARCHER_DEFF + wall[target]*WALL_DEFF;
     if (attack > deff) {
+        s.sem_num = target;
+        s.sem_op = -1;
+        semop(uniSem, &s, 1);
         archer[target] = 0;
         spear[target] = 0;
+        s.sem_op = 1;
+        semop(uniSem, &s, 1);
         archers -= archers * deff/attack;
         spears -= spears * deff/attack;
         int takenWood = 0, takenFood = 0;
         int cap = CAP * (archers+spears);
+        s.sem_op = -1;
+        semop(resSem, &s, 1);
         if (cap < wood[target]){
             takenWood = cap;
             wood[target] -= takenWood;
@@ -170,22 +189,38 @@ void *sendAttack(void *args) {
             takenFood = food[target];
             food[target] = 0;
         }
+        s.sem_op = 1;
+        semop(resSem, &s, 1);
         l = sprintf(buff, "b%d %d %d %d %de", attacker, wood[target], food[target], archer[target], spear[target]);
         write(players[target], buff, l+1);
         sleep(5);
+        s.sem_num = attacker;
+        s.sem_op = -1;
+        semop(uniSem, &s, 1);
         archer[attacker] += archers;
         spear[attacker] += spears;
+        s.sem_op = 1;
+        semop(uniSem, &s, 1);
+        s.sem_op = -1;
+        semop(uniSem, &s, 1);
         food[attacker] += takenFood;
         wood[attacker] += takenWood;
         points[attacker]++;
+        s.sem_op = 1;
+        semop(uniSem, &s, 1);
         if (points[attacker] > MAX_GAMER) {
             theEnd(attacker);
         }
         l = sprintf(buff, "h%d %d %d %d %de", archer[attacker], spear[attacker], points[attacker], wood[attacker], food[attacker]);
         write(players[attacker], buff, l+1);
     } else {
+        s.sem_num = target;
+        s.sem_op = -1;
+        semop(uniSem, &s, 1);
         archer[target] -= archer[target] * deff/attack;
         spear[target] -= spear[target] * deff/attack;
+        s.sem_op = 1;
+        semop(uniSem, &s, 1);
     }
     pthread_exit(NULL);
 }
@@ -291,8 +326,14 @@ void closePlayer(int p) {
 }
 
 void recruit(int pl, char t, int x) {
+    struct sembuf s;
+    s.sem_flg = 0;
+    s.sem_num = pl;
+    s.sem_op = -1;
     char *buff = (char*) malloc(55*sizeof(int));
     int l = sprintf(buff, "r%c-1e", t);
+    semop(uniSem, &s, 1);
+    semop(resSem, &s, 1);
     switch (t) {
         case 'a':
             if (wood[pl] >= x*ARCHER_WOOD && food[pl] >= x*ARCHER_FOOD) {
@@ -311,6 +352,9 @@ void recruit(int pl, char t, int x) {
             }
             break;
     }
+    s.sem_op = 1;
+    semop(resSem, &s, 1);
+    semop(uniSem, &s, 1);
     write(players[pl], buff, l+1);
 }
 
