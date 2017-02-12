@@ -63,6 +63,13 @@ void MainWindow::readTcpData()
         processing=temp;
     }
     temp="";
+    if(processing.contains("e"))
+    {
+        ind=processing.indexOf("e");
+        data=processing.left(ind+1);
+        temp.append(processing.mid(ind+1));
+        processing=temp;
+    }
     if ((playerID == "-1") && (data[0]=='h')){
         i=0;
         while(data[i]!= 'e') i++;
@@ -142,7 +149,7 @@ void MainWindow::readTcpData()
                         ui->food_wcost->setText(pieces[1]);
                         ui->food_fcost->setText(pieces[2]);
                     }
-                    else
+                    if(data[1]=='d')
                     {
                         ui->wallLvl->setText(pieces[0]);
                         ui->wall_wcost->setText(pieces[1]);
@@ -197,10 +204,10 @@ void MainWindow::readTcpData()
                 };break;
                 case 's' :
                 {
-                    data.remove(0, 1);
-                    QList<QByteArray> pieces = data.split(' ');
+                    for(int i=1;i<data.size()-1;i++)
+                        temp=temp+data[i];
+                    QList<QByteArray> pieces = temp.split(' ');
                     ui->archersNumber->setText(pieces[0]);
-                    pieces[1].remove(pieces[1].length(), 1);
                     ui->spearmenNumber->setText(pieces[1]);
                 };break;
             }
