@@ -29,6 +29,7 @@ public slots:
     void on_foodUpgrade_clicked();
     void on_archerRec_clicked();
     void on_spearRec_clicked();
+    void on_wallUpgrade_clicked();
 };
 
 #endif // MAINWINDOW_H
