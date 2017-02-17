@@ -5,6 +5,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <fstream>
+#include <iostream>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -17,9 +19,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    QPixmap wood("/home/cranberry/Desktop/Village/client/pics/Wood_Icon.png");
-    QPixmap food("/home/cranberry/Desktop/Village/client/pics/food.png");
-    QPixmap wall("/home/cranberry/Desktop/Village/client/pics/wall.png");
+    QPixmap wood("../client/pics/Wood_Icon.png");
+    QPixmap food("../client/pics/food.png");
+    QPixmap wall("../client/pics/wall.png");
     ui->woodIcon->setPixmap(wood);
     ui->foodIcon->setPixmap(food);
     ui->wallIcon->setPixmap(wall);
@@ -29,11 +31,21 @@ MainWindow::MainWindow(QWidget *parent) :
 
 void MainWindow::connectTcp()
 {
+    int port;
+    std::string line,Add;
+    std::ifstream input("../config");
+    while( std::getline(input,line))
+    {
+        if(line.length()==4)
+            port = std::atoi(line.c_str());
+        else
+            Add = line;
+    }
     QByteArray data;
     data = "HELLOe";
     pSocket = new QTcpSocket( this );
     connect( pSocket, SIGNAL(readyRead()), SLOT(readTcpData()) );
-    pSocket->connectToHost("127.0.0.1", 1234);
+    pSocket->connectToHost(Add.c_str(), port);
     if( pSocket->waitForConnected() ) {
         pSocket->write( data );
     }
@@ -179,10 +191,10 @@ void MainWindow::readTcpData()
                 };break;
                 case 's' :
                 {
-                    data.remove(0, 1);
-                    QList<QByteArray> pieces = data.split(' ');
+                    for(int i=1;i<data.size()-1;i++)
+                        temp=temp+data[i];
+                    QList<QByteArray> pieces = temp.split(' ');
                     ui->archersNumber->setText(pieces[0]);
-                    pieces[1].remove(pieces[1].length(), 1);
                     ui->spearmenNumber->setText(pieces[1]);
                 };break;
             }
