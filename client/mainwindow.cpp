@@ -5,6 +5,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <fstream>
+#include <iostream>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -15,11 +17,12 @@ QByteArray processing="";
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
+
 {
     ui->setupUi(this);
-    QPixmap wood("/home/cranberry/Desktop/Village/client/pics/Wood_Icon.png");
-    QPixmap food("/home/cranberry/Desktop/Village/client/pics/food.png");
-    QPixmap wall("/home/cranberry/Desktop/Village/client/pics/wall.png");
+    QPixmap wood("../client/pics/Wood_Icon.png");
+    QPixmap food("../client/pics/food.png");
+    QPixmap wall("../client/pics/wall.png");
     ui->woodIcon->setPixmap(wood);
     ui->foodIcon->setPixmap(food);
     ui->wallIcon->setPixmap(wall);
@@ -29,11 +32,21 @@ MainWindow::MainWindow(QWidget *parent) :
 
 void MainWindow::connectTcp()
 {
+    int port;
+    std::string line,Add;
+    std::ifstream input("../config");
+    while( std::getline(input,line))
+    {
+        if(line.length()==4)
+            port = std::atoi(line.c_str());
+        else
+            Add = line;
+    }
     QByteArray data;
     data = "HELLOe";
     pSocket = new QTcpSocket( this );
     connect( pSocket, SIGNAL(readyRead()), SLOT(readTcpData()) );
-    pSocket->connectToHost("127.0.0.1", 1234);
+    pSocket->connectToHost(Add.c_str(), port);
     if( pSocket->waitForConnected() ) {
         pSocket->write( data );
     }
@@ -67,8 +80,9 @@ void MainWindow::readTcpData()
     {
         ind=processing.indexOf("e");
         data=processing.left(ind+1);
-        temp.append(processing.mid(ind+1));
-        processing=temp;
+        //temp.append(processing.mid(ind+1));
+        //processing=temp;
+        processing="";
     }
     if ((playerID == "-1") && (data[0]=='h')){
         i=0;
