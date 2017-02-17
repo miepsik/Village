@@ -113,7 +113,7 @@ void *addResources(void *threadID) {
                 char buff[255];
                 int n = sprintf(buff, "x%d %de", wood[i], food[i]);
                 write(players[i], buff, n+1);
-                //printf("Surowce gracz %d\n", i);
+                printf("Surowce gracz %d\n", i);
             }
         }
         sleep(1);
