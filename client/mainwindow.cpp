@@ -12,7 +12,6 @@
 #include <string.h>
 #include <QTcpSocket>
 #include <arpa/inet.h>
-//QByteArray processing="";
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -75,6 +74,7 @@ void MainWindow::readTcpData()
         ui->food_fcost->setText(x[10]);
         ui->wall_wcost->setText(x[11]);
         ui->wall_fcost->setText(x[12]);
+        ui->wallLvl->setText("1");
         temp="";
     }
 
