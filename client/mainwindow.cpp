@@ -109,7 +109,7 @@ void MainWindow::readTcpData()
                     i=0;
                     while(data[i]!= ' ') i++;
                     xx = i;
-                    for(i=1;i<data.size()-1;i++) {
+                    for(i=1;i<data.size()-2;i++) {
                         if (i==xx) {
                             ui->woodAmmount->setText(temp);
                             temp = "";
@@ -121,7 +121,7 @@ void MainWindow::readTcpData()
                 };break;
                 case 'u' :
                 {
-                    for(int i=2;i<data.size()-1;i++)
+                    for(int i=2;i<data.size()-2;i++)
                         temp=temp+data[i];
                     QList<QByteArray> pieces = temp.split(' ');
                     if(data[1]=='w')
@@ -145,14 +145,14 @@ void MainWindow::readTcpData()
                 };break;
                 case 'r' :
                 {
-                    for(int i=2;i<data.size()-1;i++)
+                    for(int i=2;i<data.size()-2;i++)
                         temp=temp+data[i];
                     if(data[1]=='a') ui->archersNumber->setText(temp);
                         else ui->spearmenNumber->setText(temp);
                 };break;
                 case 'a' :
                 {
-                    for(int i=1;i<data.size()-1;i++)
+                    for(int i=1;i<data.size()-2;i++)
                         temp=temp+data[i];
                     QList<QByteArray> pieces = temp.split(' ');
                     foreach( const QByteArray &piece, pieces)
@@ -177,7 +177,7 @@ void MainWindow::readTcpData()
                 };break;
                 case 'h' :
                 {
-                    for(int i=1;i<data.size()-1;i++)
+                    for(int i=1;i<data.size()-2;i++)
                         temp=temp+data[i];
                     QList<QByteArray> pieces = temp.split(' ');
                     ui->archersNumber->setText(pieces[0]);
@@ -191,7 +191,7 @@ void MainWindow::readTcpData()
                 };break;
                 case 's' :
                 {
-                    for(int i=1;i<data.size()-1;i++)
+                    for(int i=1;i<data.size()-2;i++)
                         temp=temp+data[i];
                     QList<QByteArray> pieces = temp.split(' ');
                     ui->archersNumber->setText(pieces[0]);
