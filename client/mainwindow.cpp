@@ -1,4 +1,4 @@
-﻿#include "mainwindow.h"
+#include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "qmessagebox.h"
 #include <sys/types.h>
@@ -12,12 +12,10 @@
 #include <string.h>
 #include <QTcpSocket>
 #include <arpa/inet.h>
-QByteArray processing="";
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
-
 {
     ui->setupUi(this);
     QPixmap wood("../client/pics/Wood_Icon.png");
@@ -54,57 +52,32 @@ void MainWindow::connectTcp()
 
 void MainWindow::readTcpData()
 {
-    QByteArray data = ""; // = pSocket->readAll();
+    QByteArray data = pSocket->readAll();
     QByteArray temp = "",res = " Game finished! You ", t="";;
     QMessageBox msgBox;
-    int xx,i,ind;
+    int xx,i;
 
-    /*
     if (playerID == "-1"){
-        QList<QByteArray> x = data.remove(0, 1).split(' ');
-        playerID = x[0];
-        //playerID.remove(playerID.length()-1); //deleting the newline - unnecessary if not sent
-    }
-    */
-
-    processing+=pSocket->readAll();
-    if(processing.contains("\n"))
-    {
-        ind=processing.indexOf("\n");
-        temp=processing.left(ind);
-        temp.append(processing.mid(ind+1));
-        processing=temp;
-    }
-    temp="";
-    if(processing.contains("e"))
-    {
-        ind=processing.indexOf("e");
-        data=processing.left(ind+1);
-        //temp.append(processing.mid(ind+1));
-        //processing=temp;
-        processing="";
-    }
-    if ((playerID == "-1") && (data[0]=='h')){
-        i=0;
-        while(data[i]!= 'e') i++;
-        xx = i;
-        for(i=1;i<xx;i++)
+        for(int i=1;i<data.size()-2;i++)
             temp=temp+data[i];
-        QList<QByteArray> pieces = temp.split(' ');
-        playerID = pieces[0];
-        ui->woodSpeed->setText(pieces[1]);
-        ui->foodSpeed->setText(pieces[2]);
-        ui->archer_wcost->setText(pieces[3]);
-        ui->archer_fcost->setText(pieces[4]);
-        ui->spear_wcost->setText(pieces[5]);
-        ui->spear_fcost->setText(pieces[6]);
-        ui->wood_wcost->setText(pieces[7]);
-        ui->wood_fcost->setText(pieces[8]);
-        ui->food_wcost->setText(pieces[9]);
-        ui->food_fcost->setText(pieces[10]);
-        ui->wall_wcost->setText(pieces[11]);
-        ui->wall_fcost->setText(pieces[12]);
+        QList<QByteArray> x = temp.split(' ');
+        playerID = x[0];
+        ui->woodSpeed->setText(x[1]);
+        ui->foodSpeed->setText(x[2]);
+        ui->archer_wcost->setText(x[3]);
+        ui->archer_fcost->setText(x[4]);
+        ui->spear_wcost->setText(x[5]);
+        ui->spear_fcost->setText(x[6]);
+        ui->wood_wcost->setText(x[7]);
+        ui->wood_fcost->setText(x[8]);
+        ui->food_wcost->setText(x[9]);
+        ui->food_fcost->setText(x[10]);
+        ui->wall_wcost->setText(x[11]);
+        ui->wall_fcost->setText(x[12]);
+        ui->wallLvl->setText("1");
+        temp="";
     }
+
     else if(data.contains("WINNER"))
     {
         for(int i=6;i<data.size()-2;i++)
