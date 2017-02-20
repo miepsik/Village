@@ -16,7 +16,6 @@
 #include <sys/epoll.h>
 #include <poll.h>
 
-#define SERVER_PORT 1234
 #define QUEUE_SIZE 5
 #define MAX_GAMER 3
 #define ARCHER_ATTACK 5
@@ -61,16 +60,16 @@ void InicializeGamer(int gamerSocket) {
             food[i] = 0;
             archer[i] = 0;
             spear[i] = 0;
-            woodSpeed[i] = 10;
-            foodSpeed[i] = 10;
+            woodSpeed[i] = 100;
+            foodSpeed[i] = 100;
             wall[i] = 1;
             //recrutationSpeed[i] = 5000;
             int l = sprintf(buff, "h%d 10 10 %d %d %d %d %d %d %d %d %d %de", i, ARCHER_WOOD, ARCHER_FOOD, SPEAR_WOOD, SPEAR_FOOD, 
                     woodSpeed[i] * WOOD_WOOD_COST, woodSpeed[i] * WOOD_FOOD_COST, foodSpeed[i] * FOOD_WOOD_COST, foodSpeed[i] * FOOD_FOOD_COST,
                     wall[i] * WALL_WOOD_COST, wall[i] * WOOD_FOOD_COST);
-            printf("wiadomość zrobiona\n");
+            //printf("wiadomość zrobiona\n");
             write(gamerSocket, buff, l+1);
-            printf("i wysłana");
+            //printf("i wysłana");
             event.events = EPOLLIN;
             epd.u32 = (i+1)*1000;
             event.data = epd;
@@ -113,7 +112,7 @@ void *addResources(void *threadID) {
                 char buff[255];
                 int n = sprintf(buff, "x%d %de", wood[i], food[i]);
                 write(players[i], buff, n+1);
-                printf("Surowce gracz %d\n", i);
+                //printf("Surowce gracz %d\n", i);
             }
         }
         sleep(1);
@@ -144,7 +143,7 @@ void *sendAttack(void *args) {
     if (archer[attacker] < archers || spear[attacker] < spears || archers+spears < 20) {
         char buff[255];
         int l = sprintf(buff, "s-1 -1 -1 -1 -1e");
-        write(players[attacker], buff, l-1);
+        write(players[attacker], buff, l+1);
         pthread_exit(NULL);
     }
     s.sem_num = attacker;
@@ -156,7 +155,7 @@ void *sendAttack(void *args) {
     semop(uniSem, &s, 1);
     char buff[255];
     int l = sprintf(buff, "s%d %de", archer[attacker], spear[attacker]);
-    write(players[attacker], buff, l-1);
+    write(players[attacker], buff, l+1);
     sleep(5);
     int attack, deff;
     attack = archers * ARCHER_ATTACK + spears * SPEAR_ATTACK;
@@ -230,7 +229,9 @@ void *acceptAndInicializeGamer(void *threadID){
     nTmp = sizeof(struct sockaddr);
     while (1) {
         nClientSocket = accept(nSocket, (struct sockaddr*) &stClientAddr, &nTmp);
+        //printf("Ktos sioe zglosil\n");
         if (nClientSocket > 0) {
+            //printf("if\n");
             sleep(2);
             char buff[30];
             read(nClientSocket, buff, 20);
@@ -364,7 +365,16 @@ int main(int argc, char* argv[]){
     memset(&stAddr, 0, sizeof(struct sockaddr));
     stAddr.sin_family = AF_INET;
     stAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    stAddr.sin_port = htons(SERVER_PORT);
+    FILE *p;
+    p = fopen("../config", "r");
+    char b[10];
+    if (fgets(b, 10, p) == NULL){
+        fprintf(stderr, "error while reading config file");
+        exit(1);
+    }
+    unsigned int port = atoi(b);
+    printf("%d port\n", port);
+    stAddr.sin_port = htons(port);
 
     /* create a socket */
     nSocket = socket(AF_INET, SOCK_STREAM, 0);
