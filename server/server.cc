@@ -398,7 +398,7 @@ int main(int argc, char* argv[]){
 
     pthread_t thread[2];
     long t = 1;
-    printf("%d\n", nSocket);
+    //printf("%d\n", nSocket);
     if (pthread_create(&thread[0], NULL, acceptAndInicializeGamer, (void *)t) < 0)
         printf("ERROR \n");
     t++;
@@ -438,7 +438,7 @@ int main(int argc, char* argv[]){
                             case 'a': // want list of villages to attack
                                 l = sprintf(message, "a%s", listToAttack(pl));
                                 write(players[pl], message, l+1);
-                                printf("%s\n", message);
+                                //printf("%s\n", message);
                                 break;
                             case 's' : // send attack
                                 l = strlen(buff);

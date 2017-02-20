@@ -82,7 +82,7 @@ void MainWindow::readTcpData()
     {
         for(int i=6;i<data.size()-2;i++)
             temp=temp+data[i];
-        if(temp == playerID)
+        if(temp.toInt() == playerID.toInt())
             res = res+"win!";
         else
             res = res+"lose.\nThe winner is player " + temp;
