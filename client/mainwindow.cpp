@@ -13,7 +13,7 @@
 #include <QTcpSocket>
 #include <arpa/inet.h>
 
-//QByteArray processing="";
+QByteArray processing="";
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -55,11 +55,11 @@ void MainWindow::connectTcp()
 void MainWindow::readTcpData()
 {
     ;
-    QByteArray data  = pSocket->readAll();
+    QByteArray data ="";
     QByteArray temp = "",res = " Game finished! You ", t="";
     QMessageBox msgBox;
-    int xx,i;
-  /*  processing+=pSocket->readAll();
+    int xx,i,ind;
+    processing+=pSocket->readAll();
     if(processing.contains("\n"))
     {
         ind=processing.indexOf("\n");
@@ -73,10 +73,11 @@ void MainWindow::readTcpData()
         ind=processing.indexOf("e");
         data=processing.left(ind+1);
         temp.append(processing.mid(ind+1));
-            processing=temp;
-    } */
+        processing=temp;
+    }
     if(data.contains("e"))
     {
+        processing+=data.mid(data.indexOf("e")+1);
         data=data.left(data.indexOf("e"));
         if (playerID == "-1"){
             for(int i=1;i<data.size();i++)
