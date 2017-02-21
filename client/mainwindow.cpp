@@ -13,6 +13,8 @@
 #include <QTcpSocket>
 #include <arpa/inet.h>
 
+//QByteArray processing="";
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -52,151 +54,171 @@ void MainWindow::connectTcp()
 
 void MainWindow::readTcpData()
 {
-    QByteArray data = pSocket->readAll();
-    QByteArray temp = "",res = " Game finished! You ", t="";;
+    ;
+    QByteArray data  = pSocket->readAll();
+    QByteArray temp = "",res = " Game finished! You ", t="";
     QMessageBox msgBox;
     int xx,i;
-
-    if (playerID == "-1"){
-        for(int i=1;i<data.size()-2;i++)
-            temp=temp+data[i];
-        QList<QByteArray> x = temp.split(' ');
-        playerID = x[0];
-        ui->woodSpeed->setText(x[1]);
-        ui->foodSpeed->setText(x[2]);
-        ui->archer_wcost->setText(x[3]);
-        ui->archer_fcost->setText(x[4]);
-        ui->spear_wcost->setText(x[5]);
-        ui->spear_fcost->setText(x[6]);
-        ui->wood_wcost->setText(x[7]);
-        ui->wood_fcost->setText(x[8]);
-        ui->food_wcost->setText(x[9]);
-        ui->food_fcost->setText(x[10]);
-        ui->wall_wcost->setText(x[11]);
-        ui->wall_fcost->setText(x[12]);
-        ui->wallLvl->setText("1");
-        temp="";
-    }
-
-    else if(data.contains("WINNER"))
+  /*  processing+=pSocket->readAll();
+    if(processing.contains("\n"))
     {
-        for(int i=6;i<data.size()-2;i++)
-            temp=temp+data[i];
-        if(temp.toInt() == playerID.toInt())
-            res = res+"win!";
-        else
-            res = res+"lose.\nThe winner is player " + temp;
-        msgBox.setWindowTitle("Game finished!");
-        msgBox.setText(res);
-        msgBox.exec();
-        if(msgBox.Accepted==true)
-            qApp->exit();
+        ind=processing.indexOf("\n");
+        temp=processing.left(ind);
+        temp.append(processing.mid(ind+1));
+        processing=temp;
     }
-    else
+    temp="";
+    if(processing.contains("e"))
     {
-        if(data.contains("-1"))
+        ind=processing.indexOf("e");
+        data=processing.left(ind+1);
+        temp.append(processing.mid(ind+1));
+            processing=temp;
+    } */
+    if(data.contains("e"))
+    {
+        data=data.left(data.indexOf("e"));
+        if (playerID == "-1"){
+            for(int i=1;i<data.size();i++)
+                temp=temp+data[i];
+            QList<QByteArray> x = temp.split(' ');
+            playerID = x[0];
+            ui->woodSpeed->setText(x[1]);
+            ui->foodSpeed->setText(x[2]);
+            ui->archer_wcost->setText(x[3]);
+            ui->archer_fcost->setText(x[4]);
+            ui->spear_wcost->setText(x[5]);
+            ui->spear_fcost->setText(x[6]);
+            ui->wood_wcost->setText(x[7]);
+            ui->wood_fcost->setText(x[8]);
+            ui->food_wcost->setText(x[9]);
+            ui->food_fcost->setText(x[10]);
+            ui->wall_wcost->setText(x[11]);
+            ui->wall_fcost->setText(x[12]);
+            ui->wallLvl->setText("1");
+            temp="";
+        }
+
+        else if(data.contains("WINNER"))
         {
-            msgBox.setWindowTitle("Error!");
-            msgBox.setText("Action could not be completed.");
+            for(int i=6;i<data.size();i++)
+                temp=temp+data[i];
+            if(temp.toInt() == playerID.toInt())
+                res = res+"win!";
+            else
+                res = res+"lose.\nThe winner is player " + temp;
+            msgBox.setWindowTitle("Game finished!");
+            msgBox.setText(res);
             msgBox.exec();
+            if(msgBox.Accepted==true)
+                qApp->exit();
         }
         else
         {
-            switch(data[0])
+            if(data.contains("-1"))
             {
-                case 'x' :
+                msgBox.setWindowTitle("Error!");
+                msgBox.setText("Action could not be completed.");
+                msgBox.exec();
+            }
+            else
+            {
+                switch(data[0])
                 {
-                    i=0;
-                    while(data[i]!= ' ') i++;
-                    xx = i;
-                    for(i=1;i<data.size()-2;i++) {
-                        if (i==xx) {
-                            ui->woodAmmount->setText(temp);
-                            temp = "";
+                    case 'x' :
+                    {
+                        i=0;
+                        while(data[i]!= ' ') i++;
+                        xx = i;
+                        for(i=1;i<data.size();i++) {
+                            if (i==xx) {
+                                ui->woodAmmount->setText(temp);
+                                temp = "";
+                            }
+                            else
+                                temp=temp+data[i];
                         }
-                        else
+                        ui->foodAmmount->setText(temp);
+                    };break;
+                    case 'u' :
+                    {
+                        for(int i=2;i<data.size();i++)
                             temp=temp+data[i];
-                    }
-                    ui->foodAmmount->setText(temp);
-                };break;
-                case 'u' :
-                {
-                    for(int i=2;i<data.size()-2;i++)
-                        temp=temp+data[i];
-                    QList<QByteArray> pieces = temp.split(' ');
-                    if(data[1]=='w')
+                        QList<QByteArray> pieces = temp.split(' ');
+                        if(data[1]=='w')
+                        {
+                            ui->woodSpeed->setText(pieces[0]);
+                            ui->wood_wcost->setText(pieces[1]);
+                            ui->wood_fcost->setText(pieces[2]);
+                        }
+                        if(data[1]=='f')
+                        {
+                            ui->foodSpeed->setText(pieces[0]);
+                            ui->food_wcost->setText(pieces[1]);
+                            ui->food_fcost->setText(pieces[2]);
+                        }
+                        if(data[1]=='d')
+                        {
+                            ui->wallLvl->setText(pieces[0]);
+                            ui->wall_wcost->setText(pieces[1]);
+                            ui->wall_fcost->setText(pieces[2]);
+                        }
+                    };break;
+                    case 'r' :
                     {
-                        ui->woodSpeed->setText(pieces[0]);
-                        ui->wood_wcost->setText(pieces[1]);
-                        ui->wood_fcost->setText(pieces[2]);
-                    }
-                    if(data[1]=='f')
+                        for(int i=2;i<data.size();i++)
+                            temp=temp+data[i];
+                        if(data[1]=='a') ui->archersNumber->setText(temp);
+                            else ui->spearmenNumber->setText(temp);
+                    };break;
+                    case 'a' :
                     {
-                        ui->foodSpeed->setText(pieces[0]);
-                        ui->food_wcost->setText(pieces[1]);
-                        ui->food_fcost->setText(pieces[2]);
-                    }
-                    if(data[1]=='d')
+                        for(int i=1;i<data.size();i++)
+                            temp=temp+data[i];
+                        QList<QByteArray> pieces = temp.split(' ');
+                        foreach( const QByteArray &piece, pieces)
+                        {
+                            ui->availableTarget->addItem(piece);
+                        }
+                    };break;
+                    case 'b' :
                     {
-                        ui->wallLvl->setText(pieces[0]);
-                        ui->wall_wcost->setText(pieces[1]);
-                        ui->wall_fcost->setText(pieces[2]);
-                    }
-                };break;
-                case 'r' :
-                {
-                    for(int i=2;i<data.size()-2;i++)
-                        temp=temp+data[i];
-                    if(data[1]=='a') ui->archersNumber->setText(temp);
-                        else ui->spearmenNumber->setText(temp);
-                };break;
-                case 'a' :
-                {
-                    for(int i=1;i<data.size()-2;i++)
-                        temp=temp+data[i];
-                    QList<QByteArray> pieces = temp.split(' ');
-                    foreach( const QByteArray &piece, pieces)
+                        for(int i=1;i<data.size();i++)
+                            temp=temp+data[i];
+                        QList<QByteArray> pieces = temp.split(' ');
+                        ui->woodAmmount->setText(pieces[1]);
+                        ui->foodAmmount->setText(pieces[2]);
+                        ui->archersNumber->setText(pieces[3]);
+                        ui->spearmenNumber->setText(pieces[4]);
+                        t=pieces[0];
+                        temp = "You were attacked by player " + t + ". Your resources have been updated.";
+                        msgBox.setWindowTitle("Attacked!");
+                        msgBox.setText(temp);
+                        msgBox.exec();
+                    };break;
+                    case 'h' :
                     {
-                        ui->availableTarget->addItem(piece);
-                    }
-                };break;
-                case 'b' :
-                {
-                    for(int i=1;i<data.size()-2;i++)
-                        temp=temp+data[i];
-                    QList<QByteArray> pieces = temp.split(' ');
-                    ui->woodAmmount->setText(pieces[1]);
-                    ui->foodAmmount->setText(pieces[2]);
-                    ui->archersNumber->setText(pieces[3]);
-                    ui->spearmenNumber->setText(pieces[4]);
-                    t=pieces[0];
-                    temp = "You were attacked by player " + t + ". Your resources have been updated.";
-                    msgBox.setWindowTitle("Attacked!");
-                    msgBox.setText(temp);
-                    msgBox.exec();
-                };break;
-                case 'h' :
-                {
-                    for(int i=1;i<data.size()-2;i++)
-                        temp=temp+data[i];
-                    QList<QByteArray> pieces = temp.split(' ');
-                    ui->archersNumber->setText(pieces[0]);
-                    ui->spearmenNumber->setText(pieces[1]);
-                    ui->woodAmmount->setText(pieces[3]);
-                    ui->foodAmmount->setText(pieces[4]);
-                    msgBox.setWindowTitle("Attack successful!");
-                    res = "Attack successful! You now have " + pieces[2] + " points.";
-                    msgBox.setText(res);
-                    msgBox.exec();
-                };break;
-                case 's' :
-                {
-                    for(int i=1;i<data.size()-2;i++)
-                        temp=temp+data[i];
-                    QList<QByteArray> pieces = temp.split(' ');
-                    ui->archersNumber->setText(pieces[0]);
-                    ui->spearmenNumber->setText(pieces[1]);
-                };break;
+                        for(int i=1;i<data.size();i++)
+                            temp=temp+data[i];
+                        QList<QByteArray> pieces = temp.split(' ');
+                        ui->archersNumber->setText(pieces[0]);
+                        ui->spearmenNumber->setText(pieces[1]);
+                        ui->woodAmmount->setText(pieces[3]);
+                        ui->foodAmmount->setText(pieces[4]);
+                        msgBox.setWindowTitle("Attack successful!");
+                        res = "Attack successful! You now have " + pieces[2] + " points.";
+                        msgBox.setText(res);
+                        msgBox.exec();
+                    };break;
+                    case 's' :
+                    {
+                        for(int i=1;i<data.size();i++)
+                            temp=temp+data[i];
+                        QList<QByteArray> pieces = temp.split(' ');
+                        ui->archersNumber->setText(pieces[0]);
+                        ui->spearmenNumber->setText(pieces[1]);
+                    };break;
+                }
             }
         }
     }
