@@ -60,8 +60,8 @@ void InicializeGamer(int gamerSocket) {
             food[i] = 0;
             archer[i] = 0;
             spear[i] = 0;
-            woodSpeed[i] = 100;
-            foodSpeed[i] = 100;
+            woodSpeed[i] = 10;
+            foodSpeed[i] = 10;
             wall[i] = 1;
             //recrutationSpeed[i] = 5000;
             int l = sprintf(buff, "h%d 10 10 %d %d %d %d %d %d %d %d %d %de", i, ARCHER_WOOD, ARCHER_FOOD, SPEAR_WOOD, SPEAR_FOOD, 
